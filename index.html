@@ -93,7 +93,12 @@
         let provider, signer, accounts, factoryContract, x0Contract;
         const factoryAddress = '0xd272d1C287aA2Ae67fC17B5dC6a76EaDB774E8cb';
         const x0Address = '0x428dC4b69A05C128966f2A03693dEAac409F1EC5';
-        const xLayer = { chainId: '0xc4', name: 'X Layer mainnet', explorerUrl: 'https://www.okx.com/web3/explorer/xlayer', rpcUrl: 'https://rpc.xlayer.tech' };
+        const xLayer = { 
+            chainId: '0xc4', 
+            name: 'X Layer mainnet', 
+            explorerUrl: 'https://www.okx.com/web3/explorer/xlayer', 
+            rpcUrl: 'https://rpc.xlayer.tech' 
+        };
 
         const factoryABI = [
             {"inputs":[{"internalType":"uint256","name":"tokenId","type":"uint256"},{"internalType":"uint256","name":"mintPrice","type":"uint256"}],"name":"createSubdomainContract","outputs":[],"stateMutability":"nonpayable","type":"function"},
@@ -105,6 +110,7 @@
             {"inputs":[{"internalType":"string","name":"_id","type":"string"}],"name":"mint","outputs":[],"stateMutability":"nonpayable","type":"function"},
             {"inputs":[{"internalType":"string","name":"_id","type":"string"}],"name":"idsMintedLower","outputs":[{"internalType":"bool","name":"","type":"bool"}],"stateMutability":"view","type":"function"},
             {"inputs":[],"name":"MINT_PRICE","outputs":[{"internalType":"uint256","name":"","type":"uint256"}],"stateMutability":"view","type":"function"},
+            {"inputs":[],"name":"getDisplaySuffix","outputs":[{"internalType":"string","name":"","type":"string"}],"stateMutability":"view","type":"function"},
             {"anonymous":false,"inputs":[{"indexed":true,"internalType":"address","name":"minter","type":"address"},{"indexed":false,"internalType":"uint256","name":"tokenId","type":"uint256"},{"indexed":false,"internalType":"string","name":"id","type":"string"}],"name":"Minted","type":"event"},
             {"anonymous":false,"inputs":[{"indexed":true,"internalType":"address","name":"minter","type":"address"},{"indexed":false,"internalType":"string","name":"reason","type":"string"},{"indexed":false,"internalType":"uint256","name":"requiredAmount","type":"uint256"},{"indexed":false,"internalType":"uint256","name":"allowance","type":"uint256"},{"indexed":false,"internalType":"uint256","name":"balance","type":"uint256"}],"name":"MintFailed","type":"event"}
         ];
@@ -119,7 +125,7 @@
             const status = document.getElementById('networkStatus');
             try {
                 if (!window.ethereum) {
-                    status.innerHTML = 'No wallet detected. Please install <a href="https://metamask.io" target="_blank">MetaMask</a>.';
+                    status.innerHTML = 'No wallet detected. Please install <a href="https://metamask.io" target="_blank">MetaMask</a> or use a supported browser (Chrome/Firefox).';
                     throw new Error("No wallet detected");
                 }
                 status.innerText = "Connecting...";
@@ -130,7 +136,10 @@
                 const chainId = (await provider.getNetwork()).chainId;
                 if (chainId !== 196) {
                     try {
-                        await window.ethereum.request({ method: 'wallet_switchEthereumChain', params: [{ chainId: '0xc4' }] });
+                        await window.ethereum.request({ 
+                            method: 'wallet_switchEthereumChain', 
+                            params: [{ chainId: '0xc4' }] 
+                        });
                     } catch (switchError) {
                         if (switchError.code === 4902) {
                             await window.ethereum.request({
@@ -143,7 +152,9 @@
                                     blockExplorerUrls: ['https://www.okx.com/web3/explorer/xlayer']
                                 }]
                             });
-                        } else throw switchError;
+                        } else {
+                            throw new Error(`Failed to switch to X Layer: ${switchError.message}`);
+                        }
                     }
                 }
                 document.getElementById('walletAddress').innerText = `${accounts.slice(0, 6)}...${accounts.slice(-4)}`;
@@ -151,8 +162,8 @@
                 x0Contract = new ethers.Contract(x0Address, x0ABI, signer);
                 status.innerText = "Connected to X Layer";
             } catch (error) {
-                console.error(error);
-                status.innerText = "Connection failed: " + error.message;
+                console.error("Connection error:", error);
+                status.innerText = `Connection failed: ${error.message}. Try refreshing, checking MetaMask, or ensuring X Layer (Chain ID: 196) is added.`;
             }
         }
 
@@ -180,6 +191,9 @@
                 const tx = await factoryContract.createSubdomainContract(tokenId, mintPriceWei);
                 const receipt = await tx.wait();
                 const event = receipt.events.find(e => e.event === 'SubdomainContractCreated');
+                if (!event) {
+                    throw new Error("SubdomainContractCreated event not found");
+                }
                 const subdomainContractAddress = event.args.subdomainContract;
                 document.getElementById('subdomainContractAddress').textContent = subdomainContractAddress;
                 document.getElementById('subdomainContractInput').value = subdomainContractAddress;
@@ -189,7 +203,7 @@
                 await updateMintPrice(subdomainContractAddress);
             } catch (error) {
                 console.error(error);
-                status.innerText = "Failed to create subdomain contract: " + (error.reason || error.message);
+                status.innerText = `Failed to create subdomain contract: ${error.reason || error.message}`;
             } finally {
                 section.classList.remove('loading');
             }
@@ -227,7 +241,7 @@
                 status.innerText = isMinted ? `Subdomain ${subdomainId} has already been minted` : `Subdomain ${subdomainId} is available`;
             } catch (error) {
                 console.error(error);
-                status.innerText = "Failed to check mint status: " + (error.reason || error.message);
+                status.innerText = `Failed to check mint status: ${error.reason || error.message}`;
             } finally {
                 section.classList.remove('loading');
             }
@@ -251,7 +265,7 @@
                 const subdomainContract = new ethers.Contract(subdomainContractAddress, subdomainABI, provider);
                 const mintPrice = await subdomainContract.MINT_PRICE();
                 const balance = await x0Contract.balanceOf(accounts);
-                if (balance.lt(mintPrice)) {
+                if (mintPrice.gt(0) && balance.lt(mintPrice)) {
                     status.innerText = `Insufficient X0 balance: ${ethers.utils.formatUnits(balance, 18)} X0, required: ${ethers.utils.formatUnits(mintPrice, 18)} X0`;
                     return;
                 }
@@ -268,7 +282,7 @@
                 status.innerHTML = `X0 approved for ${ethers.utils.formatUnits(mintPrice, 18)} X0 (<a href="${xLayer.explorerUrl}/tx/${tx.hash}" target="_blank">View Transaction</a>)`;
             } catch (error) {
                 console.error(error);
-                status.innerText = "Failed to approve X0: " + (error.reason || error.message);
+                status.innerText = `Failed to approve X0: ${error.reason || error.message}`;
             } finally {
                 section.classList.remove('loading');
             }
@@ -316,11 +330,15 @@
                 status.innerText = `Minting subdomain ${subdomainId}...`;
                 const tx = await subdomainContract.mint(subdomainId);
                 const receipt = await tx.wait();
-                status.innerHTML = `Subdomain ${subdomainId}${await subdomainContract.getDisplaySuffix()} minted (<a href="${xLayer.explorerUrl}/tx/${tx.hash}" target="_blank">View Transaction</a>)`;
+                const displaySuffix = await subdomainContract.getDisplaySuffix();
+                status.innerHTML = `Subdomain ${subdomainId}${displaySuffix} minted (<a href="${xLayer.explorerUrl}/tx/${tx.hash}" target="_blank">View Transaction</a>)`;
                 document.getElementById('subdomainId').value = '';
             } catch (error) {
                 console.error(error);
-                status.innerText = "Failed to mint subdomain: " + (error.reason || error.message);
+                status.innerText = `Failed to mint subdomain: ${error.reason || error.message}`;
+                if (error.reason && error.reason.includes("Insufficient X0 allowance")) {
+                    status.innerText += " Please approve X0 tokens first.";
+                }
             } finally {
                 section.classList.remove('loading');
             }
@@ -368,7 +386,7 @@
             if (!window.location.protocol.startsWith('http')) {
                 document.getElementById('networkStatus').innerHTML = 'Please run this page via a local server (e.g., "npx serve") to connect MetaMask.';
             } else if (!window.ethereum) {
-                document.getElementById('networkStatus').innerHTML = 'No wallet detected. Please install <a href="https://metamask.io">MetaMask</a>.';
+                document.getElementById('networkStatus').innerHTML = 'No wallet detected. Please install <a href="https://metamask.io">MetaMask</a> or use Chrome/Firefox.';
             }
         });
     </script>
