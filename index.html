@@ -1,0 +1,376 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>X Layer Subdomain Manager</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+    <link rel="icon" href="https://woofingjace.com/images/jace.png" type="image/x-icon">
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body { font-family: 'Inter', sans-serif; background: #121212; color: #E6E6E6; padding: 20px; min-height: 100vh; line-height: 1.5; }
+        .container { max-width: 1100px; margin: 0 auto; padding: 30px; background: #1A1A1A; border-radius: 12px; box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5); }
+        h1 { text-align: center; color: #cccccc; font-size: clamp(1.8em, 5vw, 2.5em); margin-bottom: 25px; font-weight: 700; text-transform: uppercase; }
+        .section { background: #222222; padding: 20px; margin-bottom: 20px; border-radius: 8px; border: 1px solid #cccccc; }
+        h2 { color: #cccccc; font-size: clamp(1.2em, 3.5vw, 1.6em); margin-bottom: 15px; font-weight: 600; }
+        .button { background: #333333; color: #ffffff; padding: 10px 20px; border: none; border-radius: 6px; font-weight: 600; font-size: 1em; cursor: pointer; transition: background 0.3s ease, transform 0.2s ease; margin: 5px; }
+        .button:hover { background: #555555; transform: translateY(-2px); }
+        .button:disabled { background: #444444; color: #777777; cursor: not-allowed; }
+        input { width: 100%; padding: 12px; margin: 10px 0; border: 1px solid #cccccc; border-radius: 6px; background: #2A2A2A; color: #E6E6E6; font-size: 1em; }
+        input::placeholder { color: #666666; }
+        .status { margin-top: 10px; font-size: 0.9em; color: #cccccc; }
+        .wallet-info { color: #cccccc; font-weight: 600; word-break: break-all; }
+        .output-box { background: #2A2A2A; padding: 15px; border-radius: 6px; margin-bottom: 15px; word-break: break-all; font-size: 0.9em; color: #E6E6E6; }
+        .output-box label { display: block; font-size: 0.9em; margin-bottom: 5px; color: #cccccc; }
+        .footer { text-align: center; margin-top: 30px; font-size: 0.85em; color: #666666; }
+        .footer a { color: #cccccc; text-decoration: none; }
+        .footer a:hover { text-decoration: underline; }
+        .how-it-works { background: #222222; padding: 20px; border-radius: 8px; border: 1px solid #cccccc; margin-top: 20px; }
+        .how-it-works ul { list-style-type: disc; padding-left: 20px; margin-top: 10px; }
+        .how-it-works li { margin-bottom: 12px; font-size: 0.9em; }
+        .how-it-works .highlight { color: #cccccc; font-weight: 600; }
+        .loading { opacity: 0.7; pointer-events: none; }
+        @media (max-width: 768px) {
+            .container { padding: 15px; }
+            .section, .how-it-works { padding: 15px; }
+            .button { width: 100%; padding: 12px; margin: 8px 0; }
+            .how-it-works ul { padding-left: 15px; }
+            .how-it-works li { font-size: 0.85em; }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>X Layer Subdomain Manager</h1>
+        <div class="section">
+            <h2>Connect to X Layer</h2>
+            <button id="connectButton" class="button">Connect Wallet</button>
+            <p>Wallet: <span id="walletAddress" class="wallet-info">Not Connected</span></p>
+            <div id="networkStatus" class="status">Click to connect...</div>
+        </div>
+        <div class="section" id="createSubdomainSection">
+            <h2>Create Subdomain Contract</h2>
+            <input type="text" id="createTokenId" placeholder="Enter .OKX Token ID (e.g., 123)">
+            <input type="text" id="mintPrice" placeholder="Enter Mint Price in X0 (e.g., 0.1)">
+            <button id="createSubdomain" class="button">Create Subdomain Contract</button>
+            <div class="output-box">
+                <label>Subdomain Contract Address</label>
+                <span id="subdomainContractAddress">Not Created</span>
+            </div>
+            <button id="copyAddressButton" class="button">Copy Contract Address</button>
+            <div id="createStatus" class="status"></div>
+        </div>
+        <div class="section" id="mintSubdomainSection">
+            <h2>Mint Subdomain</h2>
+            <input type="text" id="subdomainContractInput" placeholder="Enter Subdomain Contract Address">
+            <input type="text" id="subdomainId" placeholder="Enter Subdomain ID (1-15 characters, e.g., test)">
+            <div class="output-box">
+                <label>Mint Price (X0)</label>
+                <span id="mintPriceDisplay">0</span>
+            </div>
+            <button id="checkMintStatus" class="button">Check Mint Status</button>
+            <button id="approveX0" class="button">Approve X0</button>
+            <button id="mintSubdomain" class="button">Mint Subdomain</button>
+            <div id="mintStatus" class="status"></div>
+        </div>
+        <div class="how-it-works">
+            <h2>How It Works?</h2>
+            <p>Manage your X Layer subdomains (.xxx) for .OKX NFTs!</p>
+            <ul>
+                <li><strong>Connect Wallet</strong>: Use MetaMask to connect to X Layer (Chain ID: 196). Ensure you have enough <span class="highlight">OKB</span> for gas fees and <span class="highlight">X0</span> for minting.</li>
+                <li><strong>Create Subdomain Contract</strong>: Enter your .OKX NFT Token ID and desired mint price (in X0) to create a subdomain contract.</li>
+                <li><strong>Mint Subdomain</strong>: Enter the subdomain contract address and a subdomain ID (e.g., test.xxx). Approve X0 tokens if required, then mint.</li>
+                <li><strong>Check Mint Status</strong>: Verify if a subdomain ID has been minted (case-insensitive).</li>
+                <li><strong>Security</strong>: Only .OKX NFT owners can create subdomain contracts. Subdomains are unique within each contract.</li>
+            </ul>
+        </div>
+        <div class="footer">
+            Powered by <a href="https://www.okx.com/web3/explorer/xlayer" target="_blank">X Layer</a> | Subdomain Manager © 2025
+        </div>
+    </div>
+    <script src="https://cdn.ethers.io/lib/ethers-5.7.umd.min.js"></script>
+    <script>
+        let provider, signer, accounts, factoryContract, x0Contract;
+        const factoryAddress = '0xd272d1C287aA2Ae67fC17B5dC6a76EaDB774E8cb';
+        const x0Address = '0x428dC4b69A05C128966f2A03693dEAac409F1EC5';
+        const xLayer = { chainId: '0xc4', name: 'X Layer mainnet', explorerUrl: 'https://www.okx.com/web3/explorer/xlayer', rpcUrl: 'https://rpc.xlayer.tech' };
+
+        const factoryABI = [
+            {"inputs":[{"internalType":"uint256","name":"tokenId","type":"uint256"},{"internalType":"uint256","name":"mintPrice","type":"uint256"}],"name":"createSubdomainContract","outputs":[],"stateMutability":"nonpayable","type":"function"},
+            {"inputs":[{"internalType":"uint256","name":"tokenId","type":"uint256"}],"name":"tokenIdToSubdomainContract","outputs":[{"internalType":"address","name":"","type":"address"}],"stateMutability":"view","type":"function"},
+            {"anonymous":false,"inputs":[{"indexed":true,"internalType":"address","name":"owner","type":"address"},{"indexed":true,"internalType":"uint256","name":"tokenId","type":"uint256"},{"indexed":true,"internalType":"address","name":"subdomainContract","type":"address"},{"internalType":"string","name":"suffix","type":"string"},{"internalType":"uint256","name":"mintPrice","type":"uint256"}],"name":"SubdomainContractCreated","type":"event"}
+        ];
+
+        const subdomainABI = [
+            {"inputs":[{"internalType":"string","name":"_id","type":"string"}],"name":"mint","outputs":[],"stateMutability":"nonpayable","type":"function"},
+            {"inputs":[{"internalType":"string","name":"_id","type":"string"}],"name":"idsMintedLower","outputs":[{"internalType":"bool","name":"","type":"bool"}],"stateMutability":"view","type":"function"},
+            {"inputs":[],"name":"MINT_PRICE","outputs":[{"internalType":"uint256","name":"","type":"uint256"}],"stateMutability":"view","type":"function"},
+            {"anonymous":false,"inputs":[{"indexed":true,"internalType":"address","name":"minter","type":"address"},{"indexed":false,"internalType":"uint256","name":"tokenId","type":"uint256"},{"indexed":false,"internalType":"string","name":"id","type":"string"}],"name":"Minted","type":"event"},
+            {"anonymous":false,"inputs":[{"indexed":true,"internalType":"address","name":"minter","type":"address"},{"indexed":false,"internalType":"string","name":"reason","type":"string"},{"indexed":false,"internalType":"uint256","name":"requiredAmount","type":"uint256"},{"indexed":false,"internalType":"uint256","name":"allowance","type":"uint256"},{"indexed":false,"internalType":"uint256","name":"balance","type":"uint256"}],"name":"MintFailed","type":"event"}
+        ];
+
+        const x0ABI = [
+            {"inputs":[{"internalType":"address","name":"spender","type":"address"},{"internalType":"uint256","name":"amount","type":"uint256"}],"name":"approve","outputs":[{"internalType":"bool","name":"","type":"bool"}],"stateMutability":"nonpayable","type":"function"},
+            {"inputs":[{"internalType":"address","name":"account","type":"address"}],"name":"balanceOf","outputs":[{"internalType":"uint256","name":"","type":"uint256"}],"stateMutability":"view","type":"function"},
+            {"inputs":[{"internalType":"address","name":"owner","type":"address"},{"internalType":"address","name":"spender","type":"address"}],"name":"allowance","outputs":[{"internalType":"uint256","name":"","type":"uint256"}],"stateMutability":"view","type":"function"}
+        ];
+
+        async function connectWallet() {
+            const status = document.getElementById('networkStatus');
+            try {
+                if (!window.ethereum) {
+                    status.innerHTML = 'No wallet detected. Please install <a href="https://metamask.io" target="_blank">MetaMask</a>.';
+                    throw new Error("No wallet detected");
+                }
+                status.innerText = "Connecting...";
+                provider = new ethers.providers.Web3Provider(window.ethereum);
+                await provider.send("eth_requestAccounts", []);
+                signer = provider.getSigner();
+                accounts = await signer.getAddress();
+                const chainId = (await provider.getNetwork()).chainId;
+                if (chainId !== 196) {
+                    try {
+                        await window.ethereum.request({ method: 'wallet_switchEthereumChain', params: [{ chainId: '0xc4' }] });
+                    } catch (switchError) {
+                        if (switchError.code === 4902) {
+                            await window.ethereum.request({
+                                method: 'wallet_addEthereumChain',
+                                params: [{
+                                    chainId: '0xc4',
+                                    chainName: 'X Layer mainnet',
+                                    nativeCurrency: { name: 'OKB', symbol: 'OKB', decimals: 18 },
+                                    rpcUrls: ['https://rpc.xlayer.tech'],
+                                    blockExplorerUrls: ['https://www.okx.com/web3/explorer/xlayer']
+                                }]
+                            });
+                        } else throw switchError;
+                    }
+                }
+                document.getElementById('walletAddress').innerText = `${accounts.slice(0, 6)}...${accounts.slice(-4)}`;
+                factoryContract = new ethers.Contract(factoryAddress, factoryABI, signer);
+                x0Contract = new ethers.Contract(x0Address, x0ABI, signer);
+                status.innerText = "Connected to X Layer";
+            } catch (error) {
+                console.error(error);
+                status.innerText = "Connection failed: " + error.message;
+            }
+        }
+
+        async function createSubdomainContract() {
+            const section = document.getElementById('createSubdomainSection');
+            const status = document.getElementById('createStatus');
+            const tokenId = document.getElementById('createTokenId').value.trim();
+            const mintPrice = document.getElementById('mintPrice').value.trim();
+            if (!tokenId || isNaN(tokenId) || Number(tokenId) < 0) {
+                status.innerText = "Please enter a valid Token ID (positive integer)";
+                return;
+            }
+            if (!mintPrice || isNaN(mintPrice) || Number(mintPrice) < 0) {
+                status.innerText = "Please enter a valid mint price (non-negative number)";
+                return;
+            }
+            if (!accounts) {
+                status.innerText = "Please connect your wallet first!";
+                return;
+            }
+            try {
+                section.classList.add('loading');
+                status.innerText = "Creating subdomain contract...";
+                const mintPriceWei = ethers.utils.parseUnits(mintPrice, 18);
+                const tx = await factoryContract.createSubdomainContract(tokenId, mintPriceWei);
+                const receipt = await tx.wait();
+                const event = receipt.events.find(e => e.event === 'SubdomainContractCreated');
+                const subdomainContractAddress = event.args.subdomainContract;
+                document.getElementById('subdomainContractAddress').textContent = subdomainContractAddress;
+                document.getElementById('subdomainContractInput').value = subdomainContractAddress;
+                status.innerHTML = `Subdomain contract created at ${subdomainContractAddress} (<a href="${xLayer.explorerUrl}/tx/${tx.hash}" target="_blank">View Transaction</a>)`;
+                document.getElementById('createTokenId').value = '';
+                document.getElementById('mintPrice').value = '';
+                await updateMintPrice(subdomainContractAddress);
+            } catch (error) {
+                console.error(error);
+                status.innerText = "Failed to create subdomain contract: " + (error.reason || error.message);
+            } finally {
+                section.classList.remove('loading');
+            }
+        }
+
+        async function updateMintPrice(subdomainContractAddress) {
+            try {
+                const subdomainContract = new ethers.Contract(subdomainContractAddress, subdomainABI, provider);
+                const mintPrice = await subdomainContract.MINT_PRICE();
+                document.getElementById('mintPriceDisplay').textContent = ethers.utils.formatUnits(mintPrice, 18);
+            } catch (error) {
+                console.error(error);
+                document.getElementById('mintPriceDisplay').textContent = "Error fetching price";
+            }
+        }
+
+        async function checkMintStatus() {
+            const section = document.getElementById('mintSubdomainSection');
+            const status = document.getElementById('mintStatus');
+            const subdomainContractAddress = document.getElementById('subdomainContractInput').value.trim();
+            const subdomainId = document.getElementById('subdomainId').value.trim();
+            if (!ethers.utils.isAddress(subdomainContractAddress)) {
+                status.innerText = "Please enter a valid subdomain contract address";
+                return;
+            }
+            if (!subdomainId || subdomainId.length < 1 || subdomainId.length > 15) {
+                status.innerText = "Please enter a valid subdomain ID (1-15 characters)";
+                return;
+            }
+            try {
+                section.classList.add('loading');
+                status.innerText = "Checking mint status...";
+                const subdomainContract = new ethers.Contract(subdomainContractAddress, subdomainABI, provider);
+                const isMinted = await subdomainContract.idsMintedLower(subdomainId.toLowerCase());
+                status.innerText = isMinted ? `Subdomain ${subdomainId} has already been minted` : `Subdomain ${subdomainId} is available`;
+            } catch (error) {
+                console.error(error);
+                status.innerText = "Failed to check mint status: " + (error.reason || error.message);
+            } finally {
+                section.classList.remove('loading');
+            }
+        }
+
+        async function approveX0() {
+            const section = document.getElementById('mintSubdomainSection');
+            const status = document.getElementById('mintStatus');
+            const subdomainContractAddress = document.getElementById('subdomainContractInput').value.trim();
+            if (!ethers.utils.isAddress(subdomainContractAddress)) {
+                status.innerText = "Please enter a valid subdomain contract address";
+                return;
+            }
+            if (!accounts) {
+                status.innerText = "Please connect your wallet first!";
+                return;
+            }
+            try {
+                section.classList.add('loading');
+                status.innerText = "Checking X0 balance and allowance...";
+                const subdomainContract = new ethers.Contract(subdomainContractAddress, subdomainABI, provider);
+                const mintPrice = await subdomainContract.MINT_PRICE();
+                const balance = await x0Contract.balanceOf(accounts);
+                if (balance.lt(mintPrice)) {
+                    status.innerText = `Insufficient X0 balance: ${ethers.utils.formatUnits(balance, 18)} X0, required: ${ethers.utils.formatUnits(mintPrice, 18)} X0`;
+                    return;
+                }
+                const allowance = await x0Contract.allowance(accounts, subdomainContractAddress);
+                if (allowance.gte(mintPrice)) {
+                    status.innerText = "X0 already approved";
+                    return;
+                }
+                status.innerText = "Approving X0...";
+                let tx = await x0Contract.approve(subdomainContractAddress, 0);
+                await tx.wait();
+                tx = await x0Contract.approve(subdomainContractAddress, mintPrice);
+                await tx.wait();
+                status.innerHTML = `X0 approved for ${ethers.utils.formatUnits(mintPrice, 18)} X0 (<a href="${xLayer.explorerUrl}/tx/${tx.hash}" target="_blank">View Transaction</a>)`;
+            } catch (error) {
+                console.error(error);
+                status.innerText = "Failed to approve X0: " + (error.reason || error.message);
+            } finally {
+                section.classList.remove('loading');
+            }
+        }
+
+        async function mintSubdomain() {
+            const section = document.getElementById('mintSubdomainSection');
+            const status = document.getElementById('mintStatus');
+            const subdomainContractAddress = document.getElementById('subdomainContractInput').value.trim();
+            const subdomainId = document.getElementById('subdomainId').value.trim();
+            if (!ethers.utils.isAddress(subdomainContractAddress)) {
+                status.innerText = "Please enter a valid subdomain contract address";
+                return;
+            }
+            if (!subdomainId || subdomainId.length < 1 || subdomainId.length > 15) {
+                status.innerText = "Please enter a valid subdomain ID (1-15 characters)";
+                return;
+            }
+            if (!accounts) {
+                status.innerText = "Please connect your wallet first!";
+                return;
+            }
+            try {
+                section.classList.add('loading');
+                status.innerText = "Checking mint status...";
+                const subdomainContract = new ethers.Contract(subdomainContractAddress, subdomainABI, signer);
+                const isMinted = await subdomainContract.idsMintedLower(subdomainId.toLowerCase());
+                if (isMinted) {
+                    status.innerText = `Subdomain ${subdomainId} has already been minted`;
+                    return;
+                }
+                const mintPrice = await subdomainContract.MINT_PRICE();
+                if (mintPrice.gt(0)) {
+                    const balance = await x0Contract.balanceOf(accounts);
+                    if (balance.lt(mintPrice)) {
+                        status.innerText = `Insufficient X0 balance: ${ethers.utils.formatUnits(balance, 18)} X0, required: ${ethers.utils.formatUnits(mintPrice, 18)} X0`;
+                        return;
+                    }
+                    const allowance = await x0Contract.allowance(accounts, subdomainContractAddress);
+                    if (allowance.lt(mintPrice)) {
+                        status.innerText = "Insufficient X0 allowance. Please approve X0 first.";
+                        return;
+                    }
+                }
+                status.innerText = `Minting subdomain ${subdomainId}...`;
+                const tx = await subdomainContract.mint(subdomainId);
+                const receipt = await tx.wait();
+                status.innerHTML = `Subdomain ${subdomainId}${await subdomainContract.getDisplaySuffix()} minted (<a href="${xLayer.explorerUrl}/tx/${tx.hash}" target="_blank">View Transaction</a>)`;
+                document.getElementById('subdomainId').value = '';
+            } catch (error) {
+                console.error(error);
+                status.innerText = "Failed to mint subdomain: " + (error.reason || error.message);
+            } finally {
+                section.classList.remove('loading');
+            }
+        }
+
+        function copyToClipboard() {
+            const status = document.getElementById('createStatus');
+            const contractAddress = document.getElementById('subdomainContractAddress').textContent;
+            if (contractAddress === "Not Created") {
+                status.innerText = "No contract address to copy";
+                return;
+            }
+            const textArea = document.createElement('textarea');
+            textArea.value = contractAddress;
+            textArea.style.position = 'fixed';
+            textArea.style.opacity = '0';
+            document.body.appendChild(textArea);
+            textArea.select();
+            try {
+                document.execCommand('copy');
+                status.innerText = 'Contract address copied to clipboard';
+            } catch (error) {
+                console.error('Copy failed:', error);
+                status.innerText = 'Failed to copy contract address';
+            } finally {
+                document.body.removeChild(textArea);
+            }
+        }
+
+        document.addEventListener('DOMContentLoaded', () => {
+            document.getElementById('connectButton').addEventListener('click', connectWallet);
+            document.getElementById('createSubdomain').addEventListener('click', createSubdomainContract);
+            document.getElementById('checkMintStatus').addEventListener('click', checkMintStatus);
+            document.getElementById('approveX0').addEventListener('click', approveX0);
+            document.getElementById('mintSubdomain').addEventListener('click', mintSubdomain);
+            document.getElementById('copyAddressButton').addEventListener('click', copyToClipboard);
+            document.getElementById('subdomainContractInput').addEventListener('input', async (e) => {
+                const address = e.target.value.trim();
+                if (ethers.utils.isAddress(address)) {
+                    await updateMintPrice(address);
+                } else {
+                    document.getElementById('mintPriceDisplay').textContent = "0";
+                }
+            });
+            if (!window.location.protocol.startsWith('http')) {
+                document.getElementById('networkStatus').innerHTML = 'Please run this page via a local server (e.g., "npx serve") to connect MetaMask.';
+            } else if (!window.ethereum) {
+                document.getElementById('networkStatus').innerHTML = 'No wallet detected. Please install <a href="https://metamask.io">MetaMask</a>.';
+            }
+        });
+    </script>
+</body>
+</html>
