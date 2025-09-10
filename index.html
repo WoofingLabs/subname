@@ -43,62 +43,57 @@
     <div class="container">
         <h1>X Layer Subdomain Manager</h1>
         <div class="section">
-            <h2>Connect to X Layer</h2>
-            <button id="connectButton" class="button">Connect Wallet</button>
-            <p>Wallet: <span id="walletAddress" class="wallet-info">Not Connected</span></p>
-            <div id="networkStatus" class="status">Click to connect...</div>
+            <h2>连接到 X Layer</h2>
+            <button id="connectButton" class="button">连接钱包</button>
+            <p>钱包: <span id="walletAddress" class="wallet-info">未连接</span></p>
+            <div id="networkStatus" class="status">点击连接...</div>
         </div>
         <div class="section" id="createSubdomainSection">
-            <h2>Create Subdomain Contract</h2>
-            <input type="text" id="createTokenId" placeholder="Enter .OKX Token ID (e.g., 123)">
-            <input type="text" id="mintPrice" placeholder="Enter Mint Price in X0 (e.g., 0.1)">
-            <button id="createSubdomain" class="button">Create Subdomain Contract</button>
+            <h2>创建子域名合约</h2>
+            <input type="text" id="createTokenId" placeholder="输入 .OKX Token ID (例如: 123)">
+            <input type="text" id="mintPrice" placeholder="输入铸造价格 (X0，例如: 0.1)">
+            <button id="createSubdomain" class="button">创建子域名合约</button>
             <div class="output-box">
-                <label>Subdomain Contract Address</label>
-                <span id="subdomainContractAddress">Not Created</span>
+                <label>子域名合约地址</label>
+                <span id="subdomainContractAddress">未创建</span>
             </div>
-            <button id="copyAddressButton" class="button">Copy Contract Address</button>
+            <button id="copyAddressButton" class="button">复制合约地址</button>
             <div id="createStatus" class="status"></div>
         </div>
         <div class="section" id="mintSubdomainSection">
-            <h2>Mint Subdomain</h2>
-            <input type="text" id="subdomainContractInput" placeholder="Enter Subdomain Contract Address">
-            <input type="text" id="subdomainId" placeholder="Enter Subdomain ID (1-15 characters, e.g., test)">
+            <h2>铸造子域名</h2>
+            <input type="text" id="subdomainContractInput" placeholder="输入子域名合约地址">
+            <input type="text" id="subdomainId" placeholder="输入子域名 ID (1-15 字符，例如: test)">
             <div class="output-box">
-                <label>Mint Price (X0)</label>
+                <label>铸造价格 (X0)</label>
                 <span id="mintPriceDisplay">0</span>
             </div>
-            <button id="checkMintStatus" class="button">Check Mint Status</button>
-            <button id="approveX0" class="button">Approve X0</button>
-            <button id="mintSubdomain" class="button">Mint Subdomain</button>
+            <button id="checkMintStatus" class="button">检查铸造状态</button>
+            <button id="approveX0" class="button">授权 X0</button>
+            <button id="mintSubdomain" class="button">铸造子域名</button>
             <div id="mintStatus" class="status"></div>
         </div>
         <div class="how-it-works">
-            <h2>How It Works?</h2>
-            <p>Manage your X Layer subdomains (.xxx) for .OKX NFTs!</p>
+            <h2>如何使用？</h2>
+            <p>在 X Layer 上管理你的 .OKX 子域名 (.xxx)！</p>
             <ul>
-                <li><strong>Connect Wallet</strong>: Use MetaMask to connect to X Layer (Chain ID: 196). Ensure you have enough <span class="highlight">OKB</span> for gas fees and <span class="highlight">X0</span> for minting.</li>
-                <li><strong>Create Subdomain Contract</strong>: Enter your .OKX NFT Token ID and desired mint price (in X0) to create a subdomain contract.</li>
-                <li><strong>Mint Subdomain</strong>: Enter the subdomain contract address and a subdomain ID (e.g., test.xxx). Approve X0 tokens if required, then mint.</li>
-                <li><strong>Check Mint Status</strong>: Verify if a subdomain ID has been minted (case-insensitive).</li>
-                <li><strong>Security</strong>: Only .OKX NFT owners can create subdomain contracts. Subdomains are unique within each contract.</li>
+                <li><strong>连接钱包</strong>：使用 MetaMask 连接到 X Layer（链 ID: 196）。确保有足够的 <span class="highlight">OKB</span> 用于 gas 费用和 <span class="highlight">X0</span> 用于铸造。</li>
+                <li><strong>创建子域名合约</strong>：输入你的 .OKX NFT Token ID 和铸造价格（X0），创建子域名合约。</li>
+                <li><strong>铸造子域名</strong>：输入子域名合约地址和子域名 ID（例如 test.xxx）。如需支付，需先授权 X0 代币，然后铸造。</li>
+                <li><strong>检查铸造状态</strong>：验证子域名 ID 是否已被铸造（大小写不敏感）。</li>
+                <li><strong>安全与唯一性</strong>：仅 .OKX NFT 持有者可创建合约，每个子域名在合约内唯一。</li>
             </ul>
         </div>
         <div class="footer">
-            Powered by <a href="https://www.okx.com/web3/explorer/xlayer" target="_blank">X Layer</a> | Subdomain Manager © 2025
+            由 <a href="https://www.okx.com/web3/explorer/xlayer" target="_blank">X Layer</a> 提供支持 | 子域名管理器 © 2025
         </div>
     </div>
-    <script src="https://cdn.ethers.io/lib/ethers-5.7.umd.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/web3@1.7.0/dist/web3.min.js"></script>
     <script>
-        let provider, signer, accounts, factoryContract, x0Contract;
+        let web3, accounts, factoryContract, x0Contract;
         const factoryAddress = '0xd272d1C287aA2Ae67fC17B5dC6a76EaDB774E8cb';
         const x0Address = '0x428dC4b69A05C128966f2A03693dEAac409F1EC5';
-        const xLayer = { 
-            chainId: '0xc4', 
-            name: 'X Layer mainnet', 
-            explorerUrl: 'https://www.okx.com/web3/explorer/xlayer', 
-            rpcUrl: 'https://rpc.xlayer.tech' 
-        };
+        const xLayer = { chainId: 196, name: 'X Layer mainnet', explorerUrl: 'https://www.okx.com/web3/explorer/xlayer', rpcUrl: 'https://rpc.xlayer.tech' };
 
         const factoryABI = [
             {"inputs":[{"internalType":"uint256","name":"tokenId","type":"uint256"},{"internalType":"uint256","name":"mintPrice","type":"uint256"}],"name":"createSubdomainContract","outputs":[],"stateMutability":"nonpayable","type":"function"},
@@ -125,21 +120,17 @@
             const status = document.getElementById('networkStatus');
             try {
                 if (!window.ethereum) {
-                    status.innerHTML = 'No wallet detected. Please install <a href="https://metamask.io" target="_blank">MetaMask</a> or use a supported browser (Chrome/Firefox).';
+                    status.innerHTML = '未检测到钱包。请安装 <a href="https://metamask.io" target="_blank">MetaMask</a> 或使用 Chrome/Firefox 浏览器。';
                     throw new Error("No wallet detected");
                 }
-                status.innerText = "Connecting...";
-                provider = new ethers.providers.Web3Provider(window.ethereum);
-                await provider.send("eth_requestAccounts", []);
-                signer = provider.getSigner();
-                accounts = await signer.getAddress();
-                const chainId = (await provider.getNetwork()).chainId;
+                status.innerText = "连接中...";
+                web3 = new Web3(window.ethereum);
+                accounts = await window.ethereum.request({ method: 'eth_requestAccounts' });
+                if (!accounts.length) throw new Error("请解锁或连接您的钱包");
+                const chainId = await web3.eth.getChainId();
                 if (chainId !== 196) {
                     try {
-                        await window.ethereum.request({ 
-                            method: 'wallet_switchEthereumChain', 
-                            params: [{ chainId: '0xc4' }] 
-                        });
+                        await window.ethereum.request({ method: 'wallet_switchEthereumChain', params: [{ chainId: '0xc4' }] });
                     } catch (switchError) {
                         if (switchError.code === 4902) {
                             await window.ethereum.request({
@@ -152,18 +143,16 @@
                                     blockExplorerUrls: ['https://www.okx.com/web3/explorer/xlayer']
                                 }]
                             });
-                        } else {
-                            throw new Error(`Failed to switch to X Layer: ${switchError.message}`);
-                        }
+                        } else throw new Error(`切换到 X Layer 失败: ${switchError.message}`);
                     }
                 }
-                document.getElementById('walletAddress').innerText = `${accounts.slice(0, 6)}...${accounts.slice(-4)}`;
-                factoryContract = new ethers.Contract(factoryAddress, factoryABI, signer);
-                x0Contract = new ethers.Contract(x0Address, x0ABI, signer);
-                status.innerText = "Connected to X Layer";
+                document.getElementById('walletAddress').innerText = `${accounts[0].slice(0, 6)}...${accounts[0].slice(-4)}`;
+                factoryContract = new web3.eth.Contract(factoryABI, factoryAddress);
+                x0Contract = new web3.eth.Contract(x0ABI, x0Address);
+                status.innerText = "已连接到 X Layer";
             } catch (error) {
                 console.error("Connection error:", error);
-                status.innerText = `Connection failed: ${error.message}. Try refreshing, checking MetaMask, or ensuring X Layer (Chain ID: 196) is added.`;
+                status.innerText = `连接失败: ${error.message}. 请检查 MetaMask，刷新页面，或手动添加 X Layer (链 ID: 196)。`;
             }
         }
 
@@ -173,37 +162,56 @@
             const tokenId = document.getElementById('createTokenId').value.trim();
             const mintPrice = document.getElementById('mintPrice').value.trim();
             if (!tokenId || isNaN(tokenId) || Number(tokenId) < 0) {
-                status.innerText = "Please enter a valid Token ID (positive integer)";
+                status.innerText = "请输入有效的 Token ID（正整数）";
                 return;
             }
             if (!mintPrice || isNaN(mintPrice) || Number(mintPrice) < 0) {
-                status.innerText = "Please enter a valid mint price (non-negative number)";
+                status.innerText = "请输入有效的铸造价格（非负数）";
                 return;
             }
             if (!accounts) {
-                status.innerText = "Please connect your wallet first!";
+                status.innerText = "请先连接您的钱包！";
                 return;
             }
             try {
                 section.classList.add('loading');
-                status.innerText = "Creating subdomain contract...";
-                const mintPriceWei = ethers.utils.parseUnits(mintPrice, 18);
-                const tx = await factoryContract.createSubdomainContract(tokenId, mintPriceWei);
-                const receipt = await tx.wait();
-                const event = receipt.events.find(e => e.event === 'SubdomainContractCreated');
-                if (!event) {
-                    throw new Error("SubdomainContractCreated event not found");
-                }
-                const subdomainContractAddress = event.args.subdomainContract;
+                status.innerText = "正在创建子域名合约...";
+                const mintPriceWei = web3.utils.toWei(mintPrice, 'ether');
+                const gas = await factoryContract.methods.createSubdomainContract(tokenId, mintPriceWei).estimateGas({ from: accounts[0] }).catch(() => 600000);
+                const tx = await factoryContract.methods.createSubdomainContract(tokenId, mintPriceWei).send({ from: accounts[0], gas: Math.floor(gas * 1.2) });
+                const receipt = await web3.eth.getTransactionReceipt(tx.transactionHash);
+                const event = receipt.logs.find(log => {
+                    try {
+                        const decoded = web3.eth.abi.decodeLog([
+                            { type: 'address', name: 'owner', indexed: true },
+                            { type: 'uint256', name: 'tokenId', indexed: true },
+                            { type: 'address', name: 'subdomainContract', indexed: true },
+                            { type: 'string', name: 'suffix' },
+                            { type: 'uint256', name: 'mintPrice' }
+                        ], log.data, log.topics);
+                        return decoded && decoded.subdomainContract;
+                    } catch {
+                        return false;
+                    }
+                });
+                if (!event) throw new Error("SubdomainContractCreated event not found");
+                const decodedEvent = web3.eth.abi.decodeLog([
+                    { type: 'address', name: 'owner', indexed: true },
+                    { type: 'uint256', name: 'tokenId', indexed: true },
+                    { type: 'address', name: 'subdomainContract', indexed: true },
+                    { type: 'string', name: 'suffix' },
+                    { type: 'uint256', name: 'mintPrice' }
+                ], event.data, event.topics);
+                const subdomainContractAddress = decodedEvent.subdomainContract;
                 document.getElementById('subdomainContractAddress').textContent = subdomainContractAddress;
                 document.getElementById('subdomainContractInput').value = subdomainContractAddress;
-                status.innerHTML = `Subdomain contract created at ${subdomainContractAddress} (<a href="${xLayer.explorerUrl}/tx/${tx.hash}" target="_blank">View Transaction</a>)`;
+                status.innerHTML = `子域名合约已创建: ${subdomainContractAddress} (<a href="${xLayer.explorerUrl}/tx/${tx.transactionHash}" target="_blank">查看交易</a>)`;
                 document.getElementById('createTokenId').value = '';
                 document.getElementById('mintPrice').value = '';
                 await updateMintPrice(subdomainContractAddress);
             } catch (error) {
                 console.error(error);
-                status.innerText = `Failed to create subdomain contract: ${error.reason || error.message}`;
+                status.innerText = `创建子域名合约失败: ${error.message.includes('revert') ? error.message.split('revert')[1]?.trim() || '未知原因' : error.message}`;
             } finally {
                 section.classList.remove('loading');
             }
@@ -211,12 +219,12 @@
 
         async function updateMintPrice(subdomainContractAddress) {
             try {
-                const subdomainContract = new ethers.Contract(subdomainContractAddress, subdomainABI, provider);
-                const mintPrice = await subdomainContract.MINT_PRICE();
-                document.getElementById('mintPriceDisplay').textContent = ethers.utils.formatUnits(mintPrice, 18);
+                const subdomainContract = new web3.eth.Contract(subdomainABI, subdomainContractAddress);
+                const mintPrice = await subdomainContract.methods.MINT_PRICE().call();
+                document.getElementById('mintPriceDisplay').textContent = web3.utils.fromWei(mintPrice, 'ether');
             } catch (error) {
                 console.error(error);
-                document.getElementById('mintPriceDisplay').textContent = "Error fetching price";
+                document.getElementById('mintPriceDisplay').textContent = "获取价格失败";
             }
         }
 
@@ -225,23 +233,23 @@
             const status = document.getElementById('mintStatus');
             const subdomainContractAddress = document.getElementById('subdomainContractInput').value.trim();
             const subdomainId = document.getElementById('subdomainId').value.trim();
-            if (!ethers.utils.isAddress(subdomainContractAddress)) {
-                status.innerText = "Please enter a valid subdomain contract address";
+            if (!web3.utils.isAddress(subdomainContractAddress)) {
+                status.innerText = "请输入有效的子域名合约地址";
                 return;
             }
             if (!subdomainId || subdomainId.length < 1 || subdomainId.length > 15) {
-                status.innerText = "Please enter a valid subdomain ID (1-15 characters)";
+                status.innerText = "请输入有效的子域名 ID（1-15 字符）";
                 return;
             }
             try {
                 section.classList.add('loading');
-                status.innerText = "Checking mint status...";
-                const subdomainContract = new ethers.Contract(subdomainContractAddress, subdomainABI, provider);
-                const isMinted = await subdomainContract.idsMintedLower(subdomainId.toLowerCase());
-                status.innerText = isMinted ? `Subdomain ${subdomainId} has already been minted` : `Subdomain ${subdomainId} is available`;
+                status.innerText = "正在检查铸造状态...";
+                const subdomainContract = new web3.eth.Contract(subdomainABI, subdomainContractAddress);
+                const isMinted = await subdomainContract.methods.idsMintedLower(subdomainId.toLowerCase()).call();
+                status.innerText = isMinted ? `子域名 ${subdomainId} 已被铸造` : `子域名 ${subdomainId} 可用`;
             } catch (error) {
                 console.error(error);
-                status.innerText = `Failed to check mint status: ${error.reason || error.message}`;
+                status.innerText = `检查铸造状态失败: ${error.message.includes('revert') ? error.message.split('revert')[1]?.trim() || '未知原因' : error.message}`;
             } finally {
                 section.classList.remove('loading');
             }
@@ -251,38 +259,38 @@
             const section = document.getElementById('mintSubdomainSection');
             const status = document.getElementById('mintStatus');
             const subdomainContractAddress = document.getElementById('subdomainContractInput').value.trim();
-            if (!ethers.utils.isAddress(subdomainContractAddress)) {
-                status.innerText = "Please enter a valid subdomain contract address";
+            if (!web3.utils.isAddress(subdomainContractAddress)) {
+                status.innerText = "请输入有效的子域名合约地址";
                 return;
             }
             if (!accounts) {
-                status.innerText = "Please connect your wallet first!";
+                status.innerText = "请先连接您的钱包！";
                 return;
             }
             try {
                 section.classList.add('loading');
-                status.innerText = "Checking X0 balance and allowance...";
-                const subdomainContract = new ethers.Contract(subdomainContractAddress, subdomainABI, provider);
-                const mintPrice = await subdomainContract.MINT_PRICE();
-                const balance = await x0Contract.balanceOf(accounts);
-                if (mintPrice.gt(0) && balance.lt(mintPrice)) {
-                    status.innerText = `Insufficient X0 balance: ${ethers.utils.formatUnits(balance, 18)} X0, required: ${ethers.utils.formatUnits(mintPrice, 18)} X0`;
+                status.innerText = "正在检查 X0 余额和授权...";
+                const subdomainContract = new web3.eth.Contract(subdomainABI, subdomainContractAddress);
+                const mintPrice = await subdomainContract.methods.MINT_PRICE().call();
+                const balance = await x0Contract.methods.balanceOf(accounts[0]).call();
+                if (mintPrice > 0 && balance < mintPrice) {
+                    status.innerText = `X0 余额不足: ${web3.utils.fromWei(balance, 'ether')} X0，需: ${web3.utils.fromWei(mintPrice, 'ether')} X0`;
                     return;
                 }
-                const allowance = await x0Contract.allowance(accounts, subdomainContractAddress);
-                if (allowance.gte(mintPrice)) {
-                    status.innerText = "X0 already approved";
+                const allowance = await x0Contract.methods.allowance(accounts[0], subdomainContractAddress).call();
+                if (allowance >= mintPrice) {
+                    status.innerText = "X0 已授权";
                     return;
                 }
-                status.innerText = "Approving X0...";
-                let tx = await x0Contract.approve(subdomainContractAddress, 0);
-                await tx.wait();
-                tx = await x0Contract.approve(subdomainContractAddress, mintPrice);
-                await tx.wait();
-                status.innerHTML = `X0 approved for ${ethers.utils.formatUnits(mintPrice, 18)} X0 (<a href="${xLayer.explorerUrl}/tx/${tx.hash}" target="_blank">View Transaction</a>)`;
+                status.innerText = "正在授权 X0...";
+                let gas = await x0Contract.methods.approve(subdomainContractAddress, 0).estimateGas({ from: accounts[0] }).catch(() => 100000);
+                await x0Contract.methods.approve(subdomainContractAddress, 0).send({ from: accounts[0], gas: Math.floor(gas * 1.2) });
+                gas = await x0Contract.methods.approve(subdomainContractAddress, mintPrice).estimateGas({ from: accounts[0] }).catch(() => 100000);
+                const tx = await x0Contract.methods.approve(subdomainContractAddress, mintPrice).send({ from: accounts[0], gas: Math.floor(gas * 1.2) });
+                status.innerHTML = `X0 已授权 ${web3.utils.fromWei(mintPrice, 'ether')} X0 (<a href="${xLayer.explorerUrl}/tx/${tx.transactionHash}" target="_blank">查看交易</a>)`;
             } catch (error) {
                 console.error(error);
-                status.innerText = `Failed to approve X0: ${error.reason || error.message}`;
+                status.innerText = `授权 X0 失败: ${error.message.includes('revert') ? error.message.split('revert')[1]?.trim() || '未知原因' : error.message}`;
             } finally {
                 section.classList.remove('loading');
             }
@@ -293,51 +301,51 @@
             const status = document.getElementById('mintStatus');
             const subdomainContractAddress = document.getElementById('subdomainContractInput').value.trim();
             const subdomainId = document.getElementById('subdomainId').value.trim();
-            if (!ethers.utils.isAddress(subdomainContractAddress)) {
-                status.innerText = "Please enter a valid subdomain contract address";
+            if (!web3.utils.isAddress(subdomainContractAddress)) {
+                status.innerText = "请输入有效的子域名合约地址";
                 return;
             }
             if (!subdomainId || subdomainId.length < 1 || subdomainId.length > 15) {
-                status.innerText = "Please enter a valid subdomain ID (1-15 characters)";
+                status.innerText = "请输入有效的子域名 ID（1-15 字符）";
                 return;
             }
             if (!accounts) {
-                status.innerText = "Please connect your wallet first!";
+                status.innerText = "请先连接您的钱包！";
                 return;
             }
             try {
                 section.classList.add('loading');
-                status.innerText = "Checking mint status...";
-                const subdomainContract = new ethers.Contract(subdomainContractAddress, subdomainABI, signer);
-                const isMinted = await subdomainContract.idsMintedLower(subdomainId.toLowerCase());
+                status.innerText = "正在检查铸造状态...";
+                const subdomainContract = new web3.eth.Contract(subdomainABI, subdomainContractAddress);
+                const isMinted = await subdomainContract.methods.idsMintedLower(subdomainId.toLowerCase()).call();
                 if (isMinted) {
-                    status.innerText = `Subdomain ${subdomainId} has already been minted`;
+                    status.innerText = `子域名 ${subdomainId} 已被铸造`;
                     return;
                 }
-                const mintPrice = await subdomainContract.MINT_PRICE();
-                if (mintPrice.gt(0)) {
-                    const balance = await x0Contract.balanceOf(accounts);
-                    if (balance.lt(mintPrice)) {
-                        status.innerText = `Insufficient X0 balance: ${ethers.utils.formatUnits(balance, 18)} X0, required: ${ethers.utils.formatUnits(mintPrice, 18)} X0`;
+                const mintPrice = await subdomainContract.methods.MINT_PRICE().call();
+                if (mintPrice > 0) {
+                    const balance = await x0Contract.methods.balanceOf(accounts[0]).call();
+                    if (balance < mintPrice) {
+                        status.innerText = `X0 余额不足: ${web3.utils.fromWei(balance, 'ether')} X0，需: ${web3.utils.fromWei(mintPrice, 'ether')} X0`;
                         return;
                     }
-                    const allowance = await x0Contract.allowance(accounts, subdomainContractAddress);
-                    if (allowance.lt(mintPrice)) {
-                        status.innerText = "Insufficient X0 allowance. Please approve X0 first.";
+                    const allowance = await x0Contract.methods.allowance(accounts[0], subdomainContractAddress).call();
+                    if (allowance < mintPrice) {
+                        status.innerText = "X0 授权不足，请先点击“授权 X0”。";
                         return;
                     }
                 }
-                status.innerText = `Minting subdomain ${subdomainId}...`;
-                const tx = await subdomainContract.mint(subdomainId);
-                const receipt = await tx.wait();
-                const displaySuffix = await subdomainContract.getDisplaySuffix();
-                status.innerHTML = `Subdomain ${subdomainId}${displaySuffix} minted (<a href="${xLayer.explorerUrl}/tx/${tx.hash}" target="_blank">View Transaction</a>)`;
+                status.innerText = `正在铸造子域名 ${subdomainId}...`;
+                const gas = await subdomainContract.methods.mint(subdomainId).estimateGas({ from: accounts[0] }).catch(() => 600000);
+                const tx = await subdomainContract.methods.mint(subdomainId).send({ from: accounts[0], gas: Math.floor(gas * 1.2) });
+                const displaySuffix = await subdomainContract.methods.getDisplaySuffix().call();
+                status.innerHTML = `子域名 ${subdomainId}${displaySuffix} 已铸造 (<a href="${xLayer.explorerUrl}/tx/${tx.transactionHash}" target="_blank">查看交易</a>)`;
                 document.getElementById('subdomainId').value = '';
             } catch (error) {
                 console.error(error);
-                status.innerText = `Failed to mint subdomain: ${error.reason || error.message}`;
-                if (error.reason && error.reason.includes("Insufficient X0 allowance")) {
-                    status.innerText += " Please approve X0 tokens first.";
+                status.innerText = `铸造子域名失败: ${error.message.includes('revert') ? error.message.split('revert')[1]?.trim() || '未知原因' : error.message}`;
+                if (error.message.includes("Insufficient X0 allowance")) {
+                    status.innerText += " 请先点击“授权 X0”。";
                 }
             } finally {
                 section.classList.remove('loading');
@@ -347,8 +355,8 @@
         function copyToClipboard() {
             const status = document.getElementById('createStatus');
             const contractAddress = document.getElementById('subdomainContractAddress').textContent;
-            if (contractAddress === "Not Created") {
-                status.innerText = "No contract address to copy";
+            if (contractAddress === "未创建") {
+                status.innerText = "无合约地址可复制";
                 return;
             }
             const textArea = document.createElement('textarea');
@@ -359,10 +367,10 @@
             textArea.select();
             try {
                 document.execCommand('copy');
-                status.innerText = 'Contract address copied to clipboard';
+                status.innerText = '合约地址已复制到剪贴板';
             } catch (error) {
-                console.error('Copy failed:', error);
-                status.innerText = 'Failed to copy contract address';
+                console.error('复制失败:', error);
+                status.innerText = '复制合约地址失败';
             } finally {
                 document.body.removeChild(textArea);
             }
@@ -377,16 +385,16 @@
             document.getElementById('copyAddressButton').addEventListener('click', copyToClipboard);
             document.getElementById('subdomainContractInput').addEventListener('input', async (e) => {
                 const address = e.target.value.trim();
-                if (ethers.utils.isAddress(address)) {
+                if (web3.utils.isAddress(address)) {
                     await updateMintPrice(address);
                 } else {
                     document.getElementById('mintPriceDisplay').textContent = "0";
                 }
             });
             if (!window.location.protocol.startsWith('http')) {
-                document.getElementById('networkStatus').innerHTML = 'Please run this page via a local server (e.g., "npx serve") to connect MetaMask.';
+                document.getElementById('networkStatus').innerHTML = '请通过本地服务器（例如 "npx serve"）运行此页面以连接 MetaMask。';
             } else if (!window.ethereum) {
-                document.getElementById('networkStatus').innerHTML = 'No wallet detected. Please install <a href="https://metamask.io">MetaMask</a> or use Chrome/Firefox.';
+                document.getElementById('networkStatus').innerHTML = '未检测到钱包。请安装 <a href="https://metamask.io">MetaMask</a> 或使用 Chrome/Firefox 浏览器。';
             }
         });
     </script>
