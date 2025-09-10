@@ -41,7 +41,7 @@
 </head>
 <body>
     <div class="container">
-        <h1>X Layer Subdomain Manager</h1>
+        <h1>X Layer 子域名管理器</h1>
         <div class="section">
             <h2>连接到 X Layer</h2>
             <button id="connectButton" class="button">连接钱包</button>
@@ -63,7 +63,7 @@
         <div class="section" id="mintSubdomainSection">
             <h2>铸造子域名</h2>
             <input type="text" id="subdomainContractInput" placeholder="输入子域名合约地址">
-            <input type="text" id="subdomainId" placeholder="输入子域名 ID (1-15 字符，例如: test)">
+            <input type="text" id="subdomainId" placeholder="输入子域名前缀 (例如: xxx，自动附加 .OKX)">
             <div class="output-box">
                 <label>铸造价格 (X0)</label>
                 <span id="mintPriceDisplay">0</span>
@@ -75,13 +75,13 @@
         </div>
         <div class="how-it-works">
             <h2>如何使用？</h2>
-            <p>在 X Layer 上管理你的 .OKX 子域名 (.xxx)！</p>
+            <p>在 X Layer 上管理你的 .OKX 子域名 (xxx.xxx.OKX)！</p>
             <ul>
                 <li><strong>连接钱包</strong>：使用 MetaMask 连接到 X Layer（链 ID: 196）。确保有足够的 <span class="highlight">OKB</span> 用于 gas 费用和 <span class="highlight">X0</span> 用于铸造。</li>
                 <li><strong>创建子域名合约</strong>：输入你的 .OKX NFT Token ID 和铸造价格（X0），创建子域名合约。</li>
-                <li><strong>铸造子域名</strong>：输入子域名合约地址和子域名 ID（例如 test.xxx）。如需支付，需先授权 X0 代币，然后铸造。</li>
-                <li><strong>检查铸造状态</strong>：验证子域名 ID 是否已被铸造（大小写不敏感）。</li>
-                <li><strong>安全与唯一性</strong>：仅 .OKX NFT 持有者可创建合约，每个子域名在合约内唯一。</li>
+                <li><strong>铸造子域名</strong>：输入子域名合约地址和子域名前缀（例如 xxx，自动附加 .OKX）。如需支付，需先授权 X0 代币，然后铸造。</li>
+                <li><strong>检查铸造状态</strong>：输入子域名前缀（例如 xxx），验证是否已被铸造（大小写不敏感）。</li>
+                <li><strong>安全与唯一性</strong>：仅 .OKX NFT 持有者可创建合约，每个子域名在合约内唯一，显示为 xxx.xxx.OKX。</li>
             </ul>
         </div>
         <div class="footer">
@@ -238,7 +238,7 @@
                 return;
             }
             if (!subdomainId || subdomainId.length < 1 || subdomainId.length > 15) {
-                status.innerText = "请输入有效的子域名 ID（1-15 字符）";
+                status.innerText = "请输入有效的子域名前缀（1-15 字符）";
                 return;
             }
             try {
@@ -246,7 +246,8 @@
                 status.innerText = "正在检查铸造状态...";
                 const subdomainContract = new web3.eth.Contract(subdomainABI, subdomainContractAddress);
                 const isMinted = await subdomainContract.methods.idsMintedLower(subdomainId.toLowerCase()).call();
-                status.innerText = isMinted ? `子域名 ${subdomainId} 已被铸造` : `子域名 ${subdomainId} 可用`;
+                const displaySuffix = await subdomainContract.methods.getDisplaySuffix().call();
+                status.innerText = isMinted ? `子域名 ${subdomainId}${displaySuffix}.OKX 已被铸造` : `子域名 ${subdomainId}${displaySuffix}.OKX 可用`;
             } catch (error) {
                 console.error(error);
                 status.innerText = `检查铸造状态失败: ${error.message.includes('revert') ? error.message.split('revert')[1]?.trim() || '未知原因' : error.message}`;
@@ -306,7 +307,7 @@
                 return;
             }
             if (!subdomainId || subdomainId.length < 1 || subdomainId.length > 15) {
-                status.innerText = "请输入有效的子域名 ID（1-15 字符）";
+                status.innerText = "请输入有效的子域名前缀（1-15 字符）";
                 return;
             }
             if (!accounts) {
@@ -319,7 +320,8 @@
                 const subdomainContract = new web3.eth.Contract(subdomainABI, subdomainContractAddress);
                 const isMinted = await subdomainContract.methods.idsMintedLower(subdomainId.toLowerCase()).call();
                 if (isMinted) {
-                    status.innerText = `子域名 ${subdomainId} 已被铸造`;
+                    const displaySuffix = await subdomainContract.methods.getDisplaySuffix().call();
+                    status.innerText = `子域名 ${subdomainId}${displaySuffix}.OKX 已被铸造`;
                     return;
                 }
                 const mintPrice = await subdomainContract.methods.MINT_PRICE().call();
@@ -339,7 +341,7 @@
                 const gas = await subdomainContract.methods.mint(subdomainId).estimateGas({ from: accounts[0] }).catch(() => 600000);
                 const tx = await subdomainContract.methods.mint(subdomainId).send({ from: accounts[0], gas: Math.floor(gas * 1.2) });
                 const displaySuffix = await subdomainContract.methods.getDisplaySuffix().call();
-                status.innerHTML = `子域名 ${subdomainId}${displaySuffix} 已铸造 (<a href="${xLayer.explorerUrl}/tx/${tx.transactionHash}" target="_blank">查看交易</a>)`;
+                status.innerHTML = `子域名 ${subdomainId}${displaySuffix}.OKX 已铸造 (<a href="${xLayer.explorerUrl}/tx/${tx.transactionHash}" target="_blank">查看交易</a>)`;
                 document.getElementById('subdomainId').value = '';
             } catch (error) {
                 console.error(error);
