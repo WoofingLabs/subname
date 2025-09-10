@@ -16,8 +16,8 @@
         .button { background: #333333; color: #ffffff; padding: 10px 20px; border: none; border-radius: 6px; font-weight: 600; font-size: 1em; cursor: pointer; transition: background 0.3s ease, transform 0.2s ease; margin: 5px; }
         .button:hover { background: #555555; transform: translateY(-2px); }
         .button:disabled { background: #444444; color: #777777; cursor: not-allowed; }
-        input, select { width: 100%; padding: 12px; margin: 10px 0; border: 1px solid #cccccc; border-radius: 6px; background: #2A2A2A; color: #E6E6E6; font-size: 1em; }
-        input::placeholder, select::placeholder { color: #666666; }
+        input { width: 100%; padding: 12px; margin: 10px 0; border: 1px solid #cccccc; border-radius: 6px; background: #2A2A2A; color: #E6E6E6; font-size: 1em; }
+        input::placeholder { color: #666666; }
         .status { margin-top: 10px; font-size: 0.9em; color: #cccccc; }
         .wallet-info { color: #cccccc; font-weight: 600; word-break: break-all; }
         .output-box { background: #2A2A2A; padding: 15px; border-radius: 6px; margin-bottom: 15px; word-break: break-all; font-size: 0.9em; color: #E6E6E6; }
@@ -62,10 +62,12 @@
         </div>
         <div class="section" id="mintSubdomainSection">
             <h2>铸造子域名</h2>
-            <select id="suffixSelect" placeholder="选择 .xxx 后缀">
-                <option value="">选择 .xxx 后缀</option>
-            </select>
+            <input type="text" id="tokenIdInput" placeholder="输入 .OKX Token ID (例如: 123)">
             <input type="text" id="subdomainId" placeholder="输入子域名 ID (1-15 字符，例如: test)">
+            <div class="output-box">
+                <label>子域名合约地址</label>
+                <span id="subdomainContractDisplay">未查询</span>
+            </div>
             <div class="output-box">
                 <label>铸造价格 (X0)</label>
                 <span id="mintPriceDisplay">0</span>
@@ -81,7 +83,7 @@
             <ul>
                 <li><strong>连接钱包</strong>：使用 MetaMask 连接到 X Layer（链 ID: 196）。确保有足够的 <span class="highlight">OKB</span> 用于 gas 费用和 <span class="highlight">X0</span> 用于铸造。</li>
                 <li><strong>创建子域名合约</strong>：输入你的 .OKX NFT Token ID 和铸造价格（X0），创建子域名合约。</li>
-                <li><strong>铸造子域名</strong>：选择 .xxx 后缀（例如 .example），输入子域名 ID（例如 test）。如需支付，需先授权 X0 代币，然后铸造。</li>
+                <li><strong>铸造子域名</strong>：输入 .OKX NFT Token ID 和子域名 ID（例如 test）。如需支付，需先授权 X0 代币，然后铸造。</li>
                 <li><strong>检查铸造状态</strong>：验证子域名 ID 是否已被铸造（大小写不敏感）。</li>
                 <li><strong>安全与唯一性</strong>：仅 .OKX NFT 持有者可创建合约，每个子域名在合约内唯一。</li>
             </ul>
@@ -100,7 +102,6 @@
         const factoryABI = [
             {"inputs":[{"internalType":"uint256","name":"tokenId","type":"uint256"},{"internalType":"uint256","name":"mintPrice","type":"uint256"}],"name":"createSubdomainContract","outputs":[],"stateMutability":"nonpayable","type":"function"},
             {"inputs":[{"internalType":"uint256","name":"tokenId","type":"uint256"}],"name":"tokenIdToSubdomainContract","outputs":[{"internalType":"address","name":"","type":"address"}],"stateMutability":"view","type":"function"},
-            {"inputs":[],"name":"getAllSubdomainContracts","outputs":[{"internalType":"address[]","name":"","type":"address[]"}],"stateMutability":"view","type":"function"},
             {"anonymous":false,"inputs":[{"indexed":true,"internalType":"address","name":"owner","type":"address"},{"indexed":true,"internalType":"uint256","name":"tokenId","type":"uint256"},{"indexed":true,"internalType":"address","name":"subdomainContract","type":"address"},{"internalType":"string","name":"suffix","type":"string"},{"internalType":"uint256","name":"mintPrice","type":"uint256"}],"name":"SubdomainContractCreated","type":"event"}
         ];
 
@@ -109,7 +110,6 @@
             {"inputs":[{"internalType":"string","name":"_id","type":"string"}],"name":"idsMintedLower","outputs":[{"internalType":"bool","name":"","type":"bool"}],"stateMutability":"view","type":"function"},
             {"inputs":[],"name":"MINT_PRICE","outputs":[{"internalType":"uint256","name":"","type":"uint256"}],"stateMutability":"view","type":"function"},
             {"inputs":[],"name":"getDisplaySuffix","outputs":[{"internalType":"string","name":"","type":"string"}],"stateMutability":"view","type":"function"},
-            {"inputs":[],"name":"SUFFIX","outputs":[{"internalType":"string","name":"","type":"string"}],"stateMutability":"view","type":"function"},
             {"anonymous":false,"inputs":[{"indexed":true,"internalType":"address","name":"minter","type":"address"},{"indexed":false,"internalType":"uint256","name":"tokenId","type":"uint256"},{"indexed":false,"internalType":"string","name":"id","type":"string"}],"name":"Minted","type":"event"},
             {"anonymous":false,"inputs":[{"indexed":true,"internalType":"address","name":"minter","type":"address"},{"indexed":false,"internalType":"string","name":"reason","type":"string"},{"indexed":false,"internalType":"uint256","name":"requiredAmount","type":"uint256"},{"indexed":false,"internalType":"uint256","name":"allowance","type":"uint256"},{"indexed":false,"internalType":"uint256","name":"balance","type":"uint256"}],"name":"MintFailed","type":"event"}
         ];
@@ -154,35 +154,9 @@
                 factoryContract = new web3.eth.Contract(factoryABI, factoryAddress);
                 x0Contract = new web3.eth.Contract(x0ABI, x0Address);
                 status.innerText = "已连接到 X Layer";
-                await populateSuffixes();
             } catch (error) {
                 console.error("Connection error:", error);
                 status.innerText = `连接失败: ${error.message}. 请检查 MetaMask，刷新页面，或手动添加 X Layer (链 ID: 196)。`;
-            }
-        }
-
-        async function populateSuffixes() {
-            const suffixSelect = document.getElementById('suffixSelect');
-            const mintStatus = document.getElementById('mintStatus');
-            try {
-                suffixSelect.innerHTML = '<option value="">选择 .xxx 后缀</option>';
-                const contracts = await factoryContract.methods.getAllSubdomainContracts().call();
-                if (contracts.length === 0) {
-                    suffixSelect.innerHTML = '<option value="">无可用 .xxx 后缀</option>';
-                    return;
-                }
-                for (const contractAddress of contracts) {
-                    const subdomainContract = new web3.eth.Contract(subdomainABI, contractAddress);
-                    const fullSuffix = await subdomainContract.methods.SUFFIX().call();
-                    const displaySuffix = fullSuffix.startsWith('.') && fullSuffix.endsWith('.OKX') ? fullSuffix.slice(0, -4) : fullSuffix;
-                    const option = document.createElement('option');
-                    option.value = contractAddress;
-                    option.textContent = displaySuffix;
-                    suffixSelect.appendChild(option);
-                }
-            } catch (error) {
-                console.error(error);
-                mintStatus.innerText = `加载 .xxx 后缀失败: ${error.message.includes('revert') ? error.message.split('revert')[1]?.trim() || '未知原因' : error.message}`;
             }
         }
 
@@ -234,11 +208,11 @@
                 ], event.data, event.topics);
                 const subdomainContractAddress = decodedEvent.subdomainContract;
                 document.getElementById('subdomainContractAddress').textContent = subdomainContractAddress;
+                document.getElementById('tokenIdInput').value = tokenId;
                 status.innerHTML = `子域名合约已创建: ${subdomainContractAddress} (<a href="${xLayer.explorerUrl}/tx/${tx.transactionHash}" target="_blank">查看交易</a>)`;
                 document.getElementById('createTokenId').value = '';
                 document.getElementById('mintPrice').value = '';
-                await populateSuffixes();
-                await updateMintPrice(subdomainContractAddress);
+                await updateSubdomainContract(tokenId);
             } catch (error) {
                 console.error(error);
                 status.innerText = `创建子域名合约失败: ${error.message.includes('revert') ? error.message.split('revert')[1]?.trim() || '未知原因' : error.message}`;
@@ -247,30 +221,39 @@
             }
         }
 
-        async function updateMintPrice(subdomainContractAddress) {
-            const mintStatus = document.getElementById('mintStatus');
+        async function updateSubdomainContract(tokenId) {
+            const status = document.getElementById('mintStatus');
             try {
-                if (!web3.utils.isAddress(subdomainContractAddress)) {
+                if (!tokenId || isNaN(tokenId) || Number(tokenId) < 0) {
+                    document.getElementById('subdomainContractDisplay').textContent = "未查询";
                     document.getElementById('mintPriceDisplay').textContent = "0";
                     return;
                 }
+                const subdomainContractAddress = await factoryContract.methods.tokenIdToSubdomainContract(tokenId).call();
+                if (subdomainContractAddress === '0x0000000000000000000000000000000000000000') {
+                    document.getElementById('subdomainContractDisplay').textContent = "未找到合约";
+                    document.getElementById('mintPriceDisplay').textContent = "0";
+                    return;
+                }
+                document.getElementById('subdomainContractDisplay').textContent = subdomainContractAddress;
                 const subdomainContract = new web3.eth.Contract(subdomainABI, subdomainContractAddress);
                 const mintPrice = await subdomainContract.methods.MINT_PRICE().call();
                 document.getElementById('mintPriceDisplay').textContent = web3.utils.fromWei(mintPrice, 'ether');
             } catch (error) {
                 console.error(error);
-                document.getElementById('mintPriceDisplay').textContent = "获取价格失败";
-                mintStatus.innerText = `获取铸造价格失败: ${error.message.includes('revert') ? error.message.split('revert')[1]?.trim() || '未知原因' : error.message}`;
+                document.getElementById('subdomainContractDisplay').textContent = "查询失败";
+                document.getElementById('mintPriceDisplay').textContent = "0";
+                status.innerText = `查询子域名合约失败: ${error.message.includes('revert') ? error.message.split('revert')[1]?.trim() || '未知原因' : error.message}`;
             }
         }
 
         async function checkMintStatus() {
             const section = document.getElementById('mintSubdomainSection');
             const status = document.getElementById('mintStatus');
-            const subdomainContractAddress = document.getElementById('suffixSelect').value;
+            const tokenId = document.getElementById('tokenIdInput').value.trim();
             const subdomainId = document.getElementById('subdomainId').value.trim();
-            if (!subdomainContractAddress) {
-                status.innerText = "请选择一个 .xxx 后缀";
+            if (!tokenId || isNaN(tokenId) || Number(tokenId) < 0) {
+                status.innerText = "请输入有效的 .OKX Token ID（正整数）";
                 return;
             }
             if (!subdomainId || subdomainId.length < 1 || subdomainId.length > 15) {
@@ -280,6 +263,11 @@
             try {
                 section.classList.add('loading');
                 status.innerText = "正在检查铸造状态...";
+                const subdomainContractAddress = await factoryContract.methods.tokenIdToSubdomainContract(tokenId).call();
+                if (subdomainContractAddress === '0x0000000000000000000000000000000000000000') {
+                    status.innerText = `未找到 Token ID ${tokenId} 对应的子域名合约`;
+                    return;
+                }
                 const subdomainContract = new web3.eth.Contract(subdomainABI, subdomainContractAddress);
                 const isMinted = await subdomainContract.methods.idsMintedLower(subdomainId.toLowerCase()).call();
                 const displaySuffix = await subdomainContract.methods.getDisplaySuffix().call();
@@ -295,9 +283,9 @@
         async function approveX0() {
             const section = document.getElementById('mintSubdomainSection');
             const status = document.getElementById('mintStatus');
-            const subdomainContractAddress = document.getElementById('suffixSelect').value;
-            if (!subdomainContractAddress) {
-                status.innerText = "请选择一个 .xxx 后缀";
+            const tokenId = document.getElementById('tokenIdInput').value.trim();
+            if (!tokenId || isNaN(tokenId) || Number(tokenId) < 0) {
+                status.innerText = "请输入有效的 .OKX Token ID（正整数）";
                 return;
             }
             if (!accounts) {
@@ -306,6 +294,12 @@
             }
             try {
                 section.classList.add('loading');
+                status.innerText = "正在检查子域名合约...";
+                const subdomainContractAddress = await factoryContract.methods.tokenIdToSubdomainContract(tokenId).call();
+                if (subdomainContractAddress === '0x0000000000000000000000000000000000000000') {
+                    status.innerText = `未找到 Token ID ${tokenId} 对应的子域名合约`;
+                    return;
+                }
                 status.innerText = "正在检查 X0 余额和授权...";
                 const subdomainContract = new web3.eth.Contract(subdomainABI, subdomainContractAddress);
                 const mintPrice = await subdomainContract.methods.MINT_PRICE().call();
@@ -336,10 +330,10 @@
         async function mintSubdomain() {
             const section = document.getElementById('mintSubdomainSection');
             const status = document.getElementById('mintStatus');
-            const subdomainContractAddress = document.getElementById('suffixSelect').value;
+            const tokenId = document.getElementById('tokenIdInput').value.trim();
             const subdomainId = document.getElementById('subdomainId').value.trim();
-            if (!subdomainContractAddress) {
-                status.innerText = "请选择一个 .xxx 后缀";
+            if (!tokenId || isNaN(tokenId) || Number(tokenId) < 0) {
+                status.innerText = "请输入有效的 .OKX Token ID（正整数）";
                 return;
             }
             if (!subdomainId || subdomainId.length < 1 || subdomainId.length > 15) {
@@ -352,6 +346,12 @@
             }
             try {
                 section.classList.add('loading');
+                status.innerText = "正在检查子域名合约...";
+                const subdomainContractAddress = await factoryContract.methods.tokenIdToSubdomainContract(tokenId).call();
+                if (subdomainContractAddress === '0x0000000000000000000000000000000000000000') {
+                    status.innerText = `未找到 Token ID ${tokenId} 对应的子域名合约`;
+                    return;
+                }
                 status.innerText = "正在检查铸造状态...";
                 const subdomainContract = new web3.eth.Contract(subdomainABI, subdomainContractAddress);
                 const isMinted = await subdomainContract.methods.idsMintedLower(subdomainId.toLowerCase()).call();
@@ -421,9 +421,9 @@
             document.getElementById('approveX0').addEventListener('click', approveX0);
             document.getElementById('mintSubdomain').addEventListener('click', mintSubdomain);
             document.getElementById('copyAddressButton').addEventListener('click', copyToClipboard);
-            document.getElementById('suffixSelect').addEventListener('change', async (e) => {
-                const address = e.target.value;
-                await updateMintPrice(address);
+            document.getElementById('tokenIdInput').addEventListener('input', async (e) => {
+                const tokenId = e.target.value.trim();
+                await updateSubdomainContract(tokenId);
             });
             if (!window.location.protocol.startsWith('http')) {
                 document.getElementById('networkStatus').innerHTML = '请通过本地服务器（例如 "npx serve"）运行此页面以连接 MetaMask。';
